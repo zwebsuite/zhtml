@@ -1,6 +1,6 @@
 const std = @import("std");
 
-const zhtml = @import("./src/zhtml.zig");
+const zhtml = @import("zhtml");
 const HTMLParser = zhtml.Parser;
 
 const vexlib = @import("vexlib");
@@ -13,7 +13,7 @@ pub fn main() void {
     const allocator = generalPurposeAllocator.allocator();
     vexlib.init(&allocator);
 
-    const htmlFile = @embedFile("./test/test.html");
+    const htmlFile = @embedFile("./test.html");
 
     var myParser = HTMLParser{};
     const ast = myParser.parse(htmlFile) catch |err| blk: {

@@ -1,0 +1,30 @@
+{
+    name: "zhtml",
+    language: "zig",
+    version: "0.0.1",
+    description: "Pure Zig HTML Parser",
+    author: "VExcess <github.com/vexcess>",
+    modules: {
+        demo: {
+            root: "demo/demo.zig",
+            dependencies: [
+                "zhtml",
+                "vexlib"
+            ]
+        },
+        zhtml: {
+            type: "lib",
+            root: "src/zhtml.zig",
+            dependencies: [
+                "vexlib",
+            ]
+        },
+        $importAll: [{
+            local: "../vexlib",
+            remote: "https://github.com/vExcess/zig-vexlib"
+        }]
+    },
+    build: {
+        default: ["demo"]
+    }
+}

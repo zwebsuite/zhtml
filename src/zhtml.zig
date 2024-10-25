@@ -38,6 +38,52 @@ pub const Document = struct {
     children: Array(ElementOrText)
 };
 
+pub fn getElementsByTagName(root: anytype, tag: anytype) ?Array(Element) {
+    const rootType = @TypeOf(root);
+    if (rootType == Document or rootType == Element) {
+        var arr = Array(Element).alloc(1);
+        // loop through children
+        var i: u32 = 0; while (i < root.children.len) : (i += 1) {
+            const child = root.children.get(0);
+            const childType = @TypeOf(child);
+            
+            // add child if match
+            if (childType == Element) {
+                if (child.tag.equals(tag)) {
+                    arr.append(child);
+                }
+            } else if (childType == ElementOrText) {
+                switch (child) {
+                    .element => {
+                        if (child.element.tag.equals(tag)) {
+                            arr.append(child.element);
+                        }
+                    },
+                    .text => {}
+                }
+            }
+
+            // add child's children
+            const subArrOrNull = getElementsByTagName(child, tag);
+            if (subArrOrNull) |subArr_| {
+                var subArr = subArr_;
+                defer subArr.dealloc();
+                var j: u32 = 0; while (j < subArr.len) : (j += 1) {
+                    arr.append(subArr.get(j).*);
+                }
+            }
+        }
+        return arr;
+    } else if (rootType == ElementOrText) {
+        return switch (root) {
+            .element => getElementsByTagName(root.element, tag),
+            .text => null
+        };
+    }
+    return null;
+}
+
+// Parser Stuff
 fn isSelfClosingTag(tagName: []u8) bool {
     var i: usize = 0;
     while (i < selfClosingTags.len) : (i += 1) {
@@ -171,8 +217,8 @@ fn parseHTML(source: String) ParseError!Array(ElementOrText) {
                     });
                 }
 
-                vexlib.println("________________");
-                vexlib.println(source.slice(idx, -1));
+                // vexlib.println("________________");
+                // vexlib.println(source.slice(idx, -1));
     
                 // parse opening tag
                 idx += 1; // skip less than character
@@ -198,8 +244,8 @@ fn parseHTML(source: String) ParseError!Array(ElementOrText) {
                 // increment idx to element's body
                 idx += As.u32(headerEndIdx) + 1;
 
-                vexlib.println("------------");
-                vexlib.println(source.slice(idx, -1));
+                // vexlib.println("------------");
+                // vexlib.println(source.slice(idx, -1));
                 
                 // check if is a self closing tag type
                 const isSelfClosingType = isSelfClosingTag(tagName.raw());
@@ -304,6 +350,7 @@ pub const Parser = struct {
     }
 };
 
+// Memory Management Stuff
 fn deallocElement(element_: Element) void {
     var element = element_;
 
@@ -311,7 +358,7 @@ fn deallocElement(element_: Element) void {
     var i: u32 = 0;
     while (i < children.len) : (i += 1) {
         const child = children.get(i);
-        switch (child) {
+        switch (child.*) {
             .element => {
                 deallocElement(child.element);
             },
@@ -332,7 +379,7 @@ pub fn deallocAST(ast_: Document) void {
     var i: u32 = 0;
     while (i < children.len) : (i += 1) {
         const child = children.get(i);
-        switch (child) {
+        switch (child.*) {
             .element => {
                 deallocElement(child.element);
             },
@@ -345,6 +392,7 @@ pub fn deallocAST(ast_: Document) void {
     ast.children.dealloc();
 }
 
+// Stringify
 fn stringifyElement(element_: Element, indentAmt: u32) String {
     const element = element_;
 
@@ -359,9 +407,9 @@ fn stringifyElement(element_: Element, indentAmt: u32) String {
     var i: u32 = 0;
     while (i < children.len) : (i += 1) {
         const child = children.get(i);
-        switch (child) {
+        switch (child.*) {
             .element => {
-                vexlib.println(child.element.tag);
+                // vexlib.println(child.element.tag);
                 var elStr = stringifyElement(child.element, 0);
                 defer elStr.dealloc();
                 out.concat(elStr);
@@ -389,7 +437,7 @@ pub fn stringify(document: Document) String {
     var i: u32 = 0;
     while (i < children.len) : (i += 1) {
         const child = children.get(i);
-        switch (child) {
+        switch (child.*) {
             .element => {
                 var elStr = stringifyElement(child.element, 0);
                 defer elStr.dealloc();
